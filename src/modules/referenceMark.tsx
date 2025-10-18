@@ -151,18 +151,19 @@ async function changeFromText(text: string, panel: HTMLDivElement, item: Zotero.
       "在这里判断是否在我的文库当中，不在文库当中显示添加到文库按钮",
       m,
     );
-    if (m) {
+    if (m?.groups) {
+      const groups = m.groups;
       //检测本地是否存在
       const searchedItem = await searchItem({
-        doi: m.groups.doi,
-        title: m.groups.title,
-        year: m.groups.year,
+        doi: groups.doi,
+        title: groups.title,
+        year: groups.year,
       });
       ztoolkit.UI.appendElement(
         {
           tag: "span",
           properties: {
-            textContent: `${m.groups.author}${m.groups.year || m.groups.doi || m.groups.title}${m.groups.yearaz}`, // "",
+            textContent: `${groups.author}${groups.year || groups.doi || groups.title}${groups.yearaz}`, // "",
           },
           styles: {
             // backgroundColor: "#ef497150",
@@ -172,14 +173,15 @@ async function changeFromText(text: string, panel: HTMLDivElement, item: Zotero.
             cursor: "pointer",
           },
         },
-        panel)
+        panel,
+      );
 
-      if (searchedItem || m.groups.journal) {
+      if (searchedItem || groups.journal) {
         ztoolkit.UI.appendElement(
           {
             tag: "span",
             properties: {
-              innerHTML: getPublicationTags(searchedItem || m.groups.journal),
+              innerHTML: getPublicationTags(searchedItem || groups.journal),
             },
             styles: {
               margin: "5px",
@@ -187,10 +189,10 @@ async function changeFromText(text: string, panel: HTMLDivElement, item: Zotero.
               cursor: "pointer",
             },
           },
-          panel)
+          panel,
+        );
       }
-      ztoolkit.log("参考文献查询", searchedItem, m.groups.journal)
-
+      ztoolkit.log("参考文献查询", searchedItem, groups.journal);
 
       if (searchedItem?.key) {
         ztoolkit.UI.appendElement(
@@ -281,7 +283,6 @@ async function changeFromText(text: string, panel: HTMLDivElement, item: Zotero.
 
       //增加查询按钮
       // if (refRow.querySelector("a")) return; //跳过已有链接的
-      const { groups } = m;
       if (groups) {
         const exePath = "C:\\Program Files (x86)\\Microsoft\\Edge\\Application\\msedge.exe";
         const url = `https://scholar.google.com/scholar_lookup?title=${encodeURIComponent(groups.title)}&author=${encodeURIComponent(groups.author)}&publication_year=${groups.year}`;
