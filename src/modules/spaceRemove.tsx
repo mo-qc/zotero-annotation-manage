@@ -63,7 +63,8 @@ function readerToolbarCallback(event: Parameters<_ZoteroTypes.Reader.EventHandle
     root,
   );
   // const debounceSearch = search, throttleSearch = debounceSearch;
-  let pdfDoc = reader?._iframe?.contentDocument?.querySelector("iframe")?.contentDocument as Document;
+  let pdfDoc = reader?._iframe?.contentDocument?.querySelector("iframe")?.contentDocument as Document | null;
+  let viewerContainer: HTMLElement | null = null;
 
   const btn = ztoolkit.UI.createElement(doc, "div", {
     namespace: "html",
@@ -80,26 +81,33 @@ function readerToolbarCallback(event: Parameters<_ZoteroTypes.Reader.EventHandle
         listener: (ev: Event) => {
           ztoolkit.log(ev);
 
-          pdfDoc = reader?._iframe?.contentDocument?.querySelector("iframe")?.contentDocument as Document;
-          if (!pdfDoc || !pdfDoc.querySelector("#viewerContainer")) return;
-
-          pdfDoc = reader?._iframe?.contentDocument?.querySelector("iframe")?.contentDocument as Document;
-          if (!pdfDoc || !pdfDoc.querySelector("#viewerContainer")) return;
-          height = (pdfDoc.querySelector("#viewerContainer")! as HTMLElement).offsetHeight;
+          const nextPdfDoc = reader?._iframe?.contentDocument?.querySelector("iframe")?.contentDocument as Document | null;
+          const nextViewerContainer = nextPdfDoc?.querySelector("#viewerContainer") as HTMLElement | null;
+          if (!nextPdfDoc || !nextViewerContainer) {
+            return;
+          }
 
           const evm = ev as MouseEvent;
           const div = evm.target as HTMLElement;
+
           if (popDiv) {
+            viewerContainer?.removeEventListener("scroll", scrollListener);
+            viewerContainer = null;
+            pdfDoc = nextPdfDoc;
             div.style.background = "";
             popDiv.remove();
             popDiv = undefined;
-            pdfDoc.querySelector("#viewerContainer")?.removeEventListener("scroll", () => throttleSearch());
-          } else {
-            pdfDoc.querySelector("#viewerContainer")?.addEventListener("scroll", () => throttleSearch());
-            div.style.background = "#ddd";
-            debounceSearch();
-            createPopDiv(div);
+            return;
           }
+
+          pdfDoc = nextPdfDoc;
+          viewerContainer = nextViewerContainer;
+          height = nextViewerContainer.offsetHeight;
+
+          viewerContainer.addEventListener("scroll", scrollListener);
+          div.style.background = "#ddd";
+          debounceSearch();
+          createPopDiv(div);
         },
       },
     ],
@@ -114,12 +122,16 @@ function readerToolbarCallback(event: Parameters<_ZoteroTypes.Reader.EventHandle
     search();
   }, 2000);
 
+  const scrollListener: EventListener = () => {
+    throttleSearch();
+  };
+
   const debounceSearch = Zotero.Utilities.debounce(() => {
     ztoolkit.log("debounceSearch");
     search();
   }, 500);
   function search() {
-    if (!popDiv) return;
+    if (!popDiv || !pdfDoc) return;
     if (running) {
       onceMore = true;
       return;

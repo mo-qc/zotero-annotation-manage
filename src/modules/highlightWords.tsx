@@ -132,8 +132,12 @@ function readerToolbarCallback(event: Parameters<_ZoteroTypes.Reader.EventHandle
     ztoolkit.log("debounceSearch");
     search();
   }, 500);
+  const scrollListener: EventListener = () => {
+    throttleSearch();
+  };
   // const debounceSearch = search, throttleSearch = debounceSearch;
-  let pdfDoc = reader?._iframe?.contentDocument?.querySelector("iframe")?.contentDocument as Document;
+  let pdfDoc = reader?._iframe?.contentDocument?.querySelector("iframe")?.contentDocument as Document | null;
+  let viewerContainer: HTMLElement | null = null;
   let running = false;
   let onceMore = false;
   let height = 1000;
@@ -141,7 +145,7 @@ function readerToolbarCallback(event: Parameters<_ZoteroTypes.Reader.EventHandle
   const colors = memFixedTagColors().map((a) => a.color);
 
   function search() {
-    if (!popDiv) return;
+    if (!popDiv || !pdfDoc) return;
     // ztoolkit.log("search", searchText)
     if (running) {
       onceMore = true;
@@ -225,6 +229,7 @@ function readerToolbarCallback(event: Parameters<_ZoteroTypes.Reader.EventHandle
   }
 
   function clearSearch() {
+    if (!pdfDoc) return;
     for (const s of pdfDoc.querySelectorAll("span[role=presentation]")) {
       const span = s as HTMLSpanElement;
       const html = span.getAttribute("data-text");
@@ -253,24 +258,34 @@ function readerToolbarCallback(event: Parameters<_ZoteroTypes.Reader.EventHandle
         listener: (ev: Event) => {
           ztoolkit.log(ev);
 
-          pdfDoc = reader?._iframe?.contentDocument?.querySelector("iframe")?.contentDocument as Document;
-          if (!pdfDoc || !pdfDoc.querySelector("#viewerContainer")) return;
-          height = (pdfDoc.querySelector("#viewerContainer")! as HTMLElement).offsetHeight;
+          const nextPdfDoc = reader?._iframe?.contentDocument?.querySelector("iframe")?.contentDocument as Document | null;
+          const nextViewerContainer = nextPdfDoc?.querySelector("#viewerContainer") as HTMLElement | null;
+          if (!nextPdfDoc || !nextViewerContainer) {
+            return;
+          }
 
           const evm = ev as MouseEvent;
           const div = evm.target as HTMLElement;
+
           if (popDiv) {
+            viewerContainer?.removeEventListener("scroll", scrollListener);
+            viewerContainer = null;
+            pdfDoc = nextPdfDoc;
             div.style.background = "";
             popDiv.remove();
             popDiv = undefined;
-            pdfDoc.querySelector("#viewerContainer")?.removeEventListener("scroll", () => throttleSearch());
             clearSearch();
-          } else {
-            pdfDoc.querySelector("#viewerContainer")?.addEventListener("scroll", () => throttleSearch());
-            div.style.background = "#ddd";
-            debounceSearch();
-            createPopDiv(div);
+            return;
           }
+
+          pdfDoc = nextPdfDoc;
+          viewerContainer = nextViewerContainer;
+          height = nextViewerContainer.offsetHeight;
+
+          viewerContainer.addEventListener("scroll", scrollListener);
+          div.style.background = "#ddd";
+          debounceSearch();
+          createPopDiv(div);
         },
       },
     ],
