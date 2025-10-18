@@ -48,7 +48,8 @@ import {
 import "./tagStyle.css";
 import styles from "./tagStyle.css";
 // import { Popover } from '@radix-ui/react-popover';
-import FixedPopup from './FixedPopup';
+import FixedPopup from "./FixedPopup";
+import "./popupRootStyles.css";
 // import { Popover, PopoverPosition, PopoverState } from 'react-tiny-popover';
 // import Sketch from '@uiw/react-color-sketch';
 // import { ColorPicker, useColor } from 'react-color-palette';
@@ -174,25 +175,35 @@ export function PopupRoot({
   }, []);
 
   const tagStyle = {
-    marginLeft: btnMarginLR + "px",
-    marginRight: btnMarginLR + "px",
-    marginTop: btnMarginTB + "px",
-    marginBottom: btnMarginTB + "px",
-    paddingLeft: btnPaddingLR + "px",
-    paddingRight: btnPaddingLR + "px",
-    paddingTop: btnPaddingTB + "px",
-    paddingBottom: btnPaddingTB + "px",
-    borderRadius: buttonBorderRadius + "px",
-    border: "2px outset ButtonBorder",
-    fontSize: fontSize + "px",
-    lineHeight: lineHeight,
-    cursor: "default",
-    ":hover": {
-      marginTop: "20px",
-    },
-  };
-  const configItemStyle = { display: "inline-block", margin: "0 5px" };
-  const tabDiv = Zotero.getMainWindow().Zotero_Tabs.deck.querySelector("#" + Zotero.getMainWindow().Zotero_Tabs.selectedID) as HTMLDivElement;
+    marginLeft: `${btnMarginLR}px`,
+    marginRight: `${btnMarginLR}px`,
+    marginTop: `${btnMarginTB}px`,
+    marginBottom: `${btnMarginTB}px`,
+    paddingLeft: `${btnPaddingLR}px`,
+    paddingRight: `${btnPaddingLR}px`,
+    paddingTop: `${btnPaddingTB}px`,
+    paddingBottom: `${btnPaddingTB}px`,
+    borderRadius: `${buttonBorderRadius}px`,
+    border: "1px solid rgba(148, 163, 184, 0.35)",
+    fontSize: `${fontSize}px`,
+    lineHeight,
+    cursor: "pointer",
+    boxShadow: "0 8px 24px -18px rgba(15, 23, 42, 0.35)",
+    transition: "transform 0.18s ease, box-shadow 0.18s ease",
+    color: "#0f172a",
+  } as const;
+  const configItemStyle = {
+    display: "inline-flex",
+    alignItems: "center",
+    gap: "6px",
+    margin: "4px 8px 4px 0",
+    padding: "4px 10px",
+    borderRadius: "10px",
+    background: "rgba(148, 163, 184, 0.14)",
+  } as const;
+  const tabDiv = Zotero.getMainWindow().Zotero_Tabs.deck.querySelector(
+    "#" + Zotero.getMainWindow().Zotero_Tabs.selectedID,
+  ) as HTMLDivElement;
   const readerUiDiv = (tabDiv.querySelector("browser") as HTMLIFrameElement).contentDocument?.querySelector("#reader-ui") as HTMLDivElement;
   const primaryViewDiv = (tabDiv.querySelector(".reader") as HTMLIFrameElement)?.contentDocument?.querySelector(
     "#split-view #primary-view",
@@ -205,7 +216,7 @@ export function PopupRoot({
   const [lastScaleItem, setLastScaleItem] = useState<Zotero.Item | undefined>(getItem(lastScaleItemKey));
 
   if (isDebug()) boundaryElement.style.border = "1px solid red";
-  // setWindowType("FollowParent") //!Fix 目前改为只跟随窗口  
+  // setWindowType("FollowParent") //!Fix 目前改为只跟随窗口
 
   useEffect(() => {
     //加载当前item的标签
@@ -484,66 +495,56 @@ export function PopupRoot({
     () => (
       <>
         {isShowConfig && (
-          <div
-            style={{
-              margin: "5px",
-              fontSize: "18px",
-              lineHeight: "1.5",
-              background: "#ddd",
-              width: "600px",
-            }}
-          >
-            <div style={{ display: "flex", flexWrap: "wrap" }}>
+          <div className="zp-config-panel">
+            <header>
+              <h3 className="zp-config-panel__title">{getString("popupRoot-setup")}</h3>
+              <p className="zp-config-panel__description">调整常用显示选项，变更会即时应用。</p>
+            </header>
+            <nav className="zp-config-panel__tabs">
               {ConfigTabArray.map((a) => (
-                <span
+                <button
+                  type="button"
                   key={a}
-                  style={{
-                    margin: "0px",
-                    padding: "0 5px",
-                    borderRadius: "8px 8px 3px 3px",
-                    borderBottom: "1px solid black",
-                    borderLeft: a !== configTab ? "1px solid black" : "",
-                    borderRight: a !== configTab ? "1px solid black" : "",
-                    borderTop: a == configTab ? "1px solid black" : "",
-                    background: a == configTab ? "#faa" : "",
-                  }}
+                  className={`zp-config-panel__tab ${a === configTab ? "zp-config-panel__tab--active" : ""}`}
                   onClick={() => {
                     setPref("configTab", a);
                     setConfigTab(a);
                   }}
                 >
                   {getString("popupRoot-" + a)}
-                </span>
+                </button>
               ))}
-            </div>
-
-            {"PanelConfig" == configTab && (
-              <>
-                <span style={configItemStyle}>
-                  {ConfigTypeArray.map((a) => loadDefaultConfig(a)).map(
-                    (config) =>
-                      config && (
-                        <button
-                          key={config.configName}
-                          className="btn"
-                          style={{
-                            ...tagStyle,
-                            background: config.bgColor,
-                            fontWeight: configName == config.configName ? "bold" : "",
-                            border: configName == config.configName ? "1px solid #000" : "",
-                          }}
-                          onClick={() => {
-                            selectConfig(config);
-                          }}
-                          defaultValue={config.configName}
-                        >
-                          {getString("popupRoot-ConfigType-" + config.configName)}
-                        </button>
-                      ),
-                  )}
-                </span>
-                <span style={configItemStyle}>
-                  {/* <ChangeColor
+            </nav>
+            <div className="zp-config-panel__content">
+              {"PanelConfig" == configTab && (
+                <section className="zp-config-panel__section">
+                  <div className="zp-config-panel__sectionTitle">{getString("popupRoot-PanelConfig")}</div>
+                  <div className="zp-config-panel__sectionContent">
+                    <span style={configItemStyle}>
+                      {ConfigTypeArray.map((a) => loadDefaultConfig(a)).map(
+                        (config) =>
+                          config && (
+                            <button
+                              key={config.configName}
+                              className="btn"
+                              style={{
+                                ...tagStyle,
+                                background: config.bgColor,
+                                fontWeight: configName == config.configName ? "bold" : "",
+                                border: configName == config.configName ? "1px solid #000" : "",
+                              }}
+                              onClick={() => {
+                                selectConfig(config);
+                              }}
+                              defaultValue={config.configName}
+                            >
+                              {getString("popupRoot-ConfigType-" + config.configName)}
+                            </button>
+                          ),
+                      )}
+                    </span>
+                    <span style={configItemStyle}>
+                      {/* <ChangeColor
                     color={bgColor}
                     onChange={(e) => {
                       setBgColor(e);
@@ -561,8 +562,8 @@ export function PopupRoot({
                     ></span>
                     <span>调整背景颜色 </span>
                   </ChangeColor> */}
-                </span>
-                {/* <label style={configItemStyle}>
+                    </span>
+                    {/* <label style={configItemStyle}>
                   <input
                     type="checkbox"
                     defaultChecked={pSingleWindow}
@@ -575,7 +576,7 @@ export function PopupRoot({
                   {pSingleWindow}
                 </label> */}
 
-                {/* <div>
+                    {/* <div>
                   排序规则：
                   {SortTypeArray.map((a) => (
                     <label>
@@ -584,153 +585,161 @@ export function PopupRoot({
                     </label>
                   ))}
                 </div> */}
-                <span style={configItemStyle}>
-                  <input
-                    style={inputWidth("zlb")}
-                    type="number"
-                    min={5}
-                    max={100}
-                    defaultValue={getPrefAs("autoCloseSeconds", 15)}
-                    onInput={(e) => {
-                      if (e.currentTarget.value) {
-                        setAutoCloseSeconds(e.currentTarget.valueAsNumber);
-                        setPref("autoCloseSeconds", e.currentTarget.valueAsNumber);
-                      }
-                    }}
-                  />
-                  秒后自动关闭。
-                </span>
-                <label style={configItemStyle}>
-                  <input
-                    type="checkbox"
-                    defaultChecked={bAutoFocus}
-                    onChange={(e) => {
-                      setBAutoFocus(e.currentTarget.checked);
-                      setPref("bAutoFocus", e.currentTarget.checked);
-                    }}
-                  />
-                  输入框自动获得焦点
-                </label>
-                {/* <span>当前配置：{configName}</span> */}
+                    <span style={configItemStyle}>
+                      <input
+                        style={inputWidth("zlb")}
+                        type="number"
+                        min={5}
+                        max={100}
+                        defaultValue={getPrefAs("autoCloseSeconds", 15)}
+                        onInput={(e) => {
+                          if (e.currentTarget.value) {
+                            setAutoCloseSeconds(e.currentTarget.valueAsNumber);
+                            setPref("autoCloseSeconds", e.currentTarget.valueAsNumber);
+                          }
+                        }}
+                      />
+                      秒后自动关闭。
+                    </span>
+                    <label style={configItemStyle}>
+                      <input
+                        type="checkbox"
+                        defaultChecked={bAutoFocus}
+                        onChange={(e) => {
+                          setBAutoFocus(e.currentTarget.checked);
+                          setPref("bAutoFocus", e.currentTarget.checked);
+                        }}
+                      />
+                      输入框自动获得焦点
+                    </label>
+                    {/* <span>当前配置：{configName}</span> */}
 
-                <label>
-                  <input
-                    type="checkbox"
-                    defaultChecked={blockHightLightUnderLineToggle}
-                    onChange={handleInputBoolean("blockHUToggle", setBlockHightLightUnderLineToggle)}
-                  />
-                  屏蔽 Zotero 高亮/下划线切换按钮
-                </label>
+                    <label>
+                      <input
+                        type="checkbox"
+                        defaultChecked={blockHightLightUnderLineToggle}
+                        onChange={handleInputBoolean("blockHUToggle", setBlockHightLightUnderLineToggle)}
+                      />
+                      屏蔽 Zotero 高亮/下划线切换按钮
+                    </label>
 
-                <label>
-                  <input type="checkbox" defaultChecked={bComment} onChange={handleInputBoolean("bComment", setBComment)} />
-                  允许输入注释
-                </label>
+                    <label>
+                      <input type="checkbox" defaultChecked={bComment} onChange={handleInputBoolean("bComment", setBComment)} />
+                      允许输入注释
+                    </label>
 
-                <div>
-                  窗口显示样式： {getString("popupRoot-WindowType-FollowParent")}
-                  {/* {WindowTypeArray.map((a) => (
+                    <div>
+                      窗口显示样式： {getString("popupRoot-WindowType-FollowParent")}
+                      {/* {WindowTypeArray.map((a) => (
                     <label key={a}>
 
                       <input type="radio" value={a} checked={windowType === a} onChange={handleInput("windowType", setWindowType)} />
                       {getString("popupRoot-WindowType-" + a)}
                     </label>
                   ))} */}
-                </div>
+                    </div>
 
-                <span style={configItemStyle}>
-                  最大高度:
-                  <input
-                    type="number"
-                    min={30}
-                    max={600}
-                    step={10}
-                    defaultValue={divMaxHeight}
-                    style={inputWidth("zlb")}
-                    onInput={(e) => {
-                      if (e.currentTarget.value) {
-                        setPref("divMaxHeight", e.currentTarget.valueAsNumber);
-                        setDivMaxHeight(e.currentTarget.valueAsNumber);
-                      }
-                    }}
-                  />
-                  px。
-                </span>
+                    <span style={configItemStyle}>
+                      最大高度:
+                      <input
+                        type="number"
+                        min={30}
+                        max={600}
+                        step={10}
+                        defaultValue={divMaxHeight}
+                        style={inputWidth("zlb")}
+                        onInput={(e) => {
+                          if (e.currentTarget.value) {
+                            setPref("divMaxHeight", e.currentTarget.valueAsNumber);
+                            setDivMaxHeight(e.currentTarget.valueAsNumber);
+                          }
+                        }}
+                      />
+                      px。
+                    </span>
 
-                <span style={configItemStyle}>
-                  最大宽度:
-                  <input
-                    type="number"
-                    min={100}
-                    max={1200}
-                    step={10}
-                    defaultValue={divMaxWidth}
-                    style={inputWidth("zlb")}
-                    onInput={(e) => {
-                      if (e.currentTarget.value) {
-                        setPref("divMaxWidth", e.currentTarget.valueAsNumber);
-                        setDivMaxWidth(e.currentTarget.valueAsNumber);
-                      }
+                    <span style={configItemStyle}>
+                      最大宽度:
+                      <input
+                        type="number"
+                        min={100}
+                        max={1200}
+                        step={10}
+                        defaultValue={divMaxWidth}
+                        style={inputWidth("zlb")}
+                        onInput={(e) => {
+                          if (e.currentTarget.value) {
+                            setPref("divMaxWidth", e.currentTarget.valueAsNumber);
+                            setDivMaxWidth(e.currentTarget.valueAsNumber);
+                          }
+                        }}
+                      />
+                      px。
+                    </span>
+                  </div>
+                </section>
+              )}
+              {"FixedPanel" == configTab && (
+                <section className="zp-config-panel__section">
+                  <div className="zp-config-panel__sectionTitle">{getString("popupRoot-FixedPanel")}</div>
+                  <div className="zp-config-panel__sectionContent">
+                    {/* <label>
+                    <input
+                      type="checkbox"
+                      defaultChecked={pFixedContentLocation}
+                      onChange={(e) => {
+                        setPFixedContentLocation(e.currentTarget.checked);
+                        setPref("pFixedContentLocation", e.currentTarget.checked);
+                      }}
+                    />
+                    固定弹出区域
+                  </label> */}
+                    <span style={configItemStyle}>
+                      left:
+                      <input
+                        type="number"
+                        min={0}
+                        step={10}
+                        max={500}
+                        style={inputWidth("zlb")}
+                        defaultValue={pFCLLeft}
+                        onInput={(e) => {
+                          if (e.currentTarget.value) {
+                            setPref("pFCLLeft", e.currentTarget.value);
+                            setFCLLeft(e.currentTarget.valueAsNumber);
+                          }
+                        }}
+                      />
+                    </span>
+                    <span style={configItemStyle}>
+                      top:
+                      <input
+                        type="number"
+                        min={0}
+                        step={10}
+                        max={1000}
+                        style={inputWidth("zzlb")}
+                        defaultValue={nFCLTop}
+                        onInput={handleInputNumber("nFCLTop", setFCLTop)}
+                      />
+                    </span>
+                  </div>
+                </section>
+              )}
+              {"PopupPanel" == configTab && (
+                <section className="zp-config-panel__section">
+                  <div className="zp-config-panel__sectionTitle">{getString("popupRoot-PopupPanel")}</div>
+                  <div
+                    className="zp-config-panel__sectionContent"
+                    style={{
+                      fontSize: "18px",
+                      lineHeight: "1.5",
+                      gap: "10px",
+                      flexDirection: "column",
+                      alignItems: "flex-start",
                     }}
-                  />
-                  px。
-                </span>
-              </>
-            )}
-            {"FixedPanel" == configTab && (
-              <div>
-                {/* <label>
-                  <input
-                    type="checkbox"
-                    defaultChecked={pFixedContentLocation}
-                    onChange={(e) => {
-                      setPFixedContentLocation(e.currentTarget.checked);
-                      setPref("pFixedContentLocation", e.currentTarget.checked);
-                    }}
-                  />
-                  固定弹出区域
-                </label> */}
-
-                <span style={configItemStyle}>
-                  left:
-                  <input
-                    type="number"
-                    min={0}
-                    step={10}
-                    max={500}
-                    style={inputWidth("zlb")}
-                    defaultValue={pFCLLeft}
-                    onInput={(e) => {
-                      if (e.currentTarget.value) {
-                        setPref("pFCLLeft", e.currentTarget.value);
-                        setFCLLeft(e.currentTarget.valueAsNumber);
-                      }
-                    }}
-                  />
-                </span>
-                <span style={configItemStyle}>
-                  top:
-                  <input
-                    type="number"
-                    min={0}
-                    step={10}
-                    max={1000}
-                    style={inputWidth("zzlb")}
-                    defaultValue={nFCLTop}
-                    onInput={handleInputNumber("nFCLTop", setFCLTop)}
-                  />
-                </span>
-              </div>
-            )}
-            {"PopupPanel" == configTab && (
-              <div
-                style={{
-                  fontSize: "18px",
-                  lineHeight: "1.5",
-                }}
-              >
-                <>
-                  {/* <label style={configItemStyle}>
+                  >
+                    {/* <label style={configItemStyle}>
                     <input
                       type="checkbox"
                       defaultChecked={!pFixedContentLocation}
@@ -741,41 +750,41 @@ export function PopupRoot({
                     />
                     浮动弹出区域。
                   </label> */}
-                  <span style={configItemStyle}>
-                    和颜色框的距离:
-                    <input
-                      type="number"
-                      min={0}
-                      step={1}
-                      max={200}
-                      style={inputWidth("zlb")}
-                      defaultValue={Math.round(pPadding)}
-                      onInput={(e) => {
-                        if (e.currentTarget.value) {
-                          setPref("pPadding", e.currentTarget.value);
-                          setPPadding(e.currentTarget.valueAsNumber);
-                        }
-                      }}
-                    />
-                  </span>
-                  <span style={configItemStyle}>
-                    边缘检测距离:
-                    <input
-                      type="number"
-                      min={40}
-                      step={1}
-                      max={200}
-                      style={inputWidth("zlb")}
-                      defaultValue={pBoundaryInset}
-                      onInput={(e) => {
-                        if (e.currentTarget.value) {
-                          setPref("pBoundaryInset", e.currentTarget.value);
-                          setPBoundaryInset(e.currentTarget.valueAsNumber);
-                        }
-                      }}
-                    />
-                  </span>
-                  {/*已取消 <span style={configItemStyle}>
+                    <span style={configItemStyle}>
+                      和颜色框的距离:
+                      <input
+                        type="number"
+                        min={0}
+                        step={1}
+                        max={200}
+                        style={inputWidth("zlb")}
+                        defaultValue={Math.round(pPadding)}
+                        onInput={(e) => {
+                          if (e.currentTarget.value) {
+                            setPref("pPadding", e.currentTarget.value);
+                            setPPadding(e.currentTarget.valueAsNumber);
+                          }
+                        }}
+                      />
+                    </span>
+                    <span style={configItemStyle}>
+                      边缘检测距离:
+                      <input
+                        type="number"
+                        min={40}
+                        step={1}
+                        max={200}
+                        style={inputWidth("zlb")}
+                        defaultValue={pBoundaryInset}
+                        onInput={(e) => {
+                          if (e.currentTarget.value) {
+                            setPref("pBoundaryInset", e.currentTarget.value);
+                            setPBoundaryInset(e.currentTarget.valueAsNumber);
+                          }
+                        }}
+                      />
+                    </span>
+                    {/*已取消 <span style={configItemStyle}>
                     三角大小:
                     <input
                       type="number"
@@ -792,7 +801,7 @@ export function PopupRoot({
                       }}
                     />
                   </span> */}
-                  {/* <span style={configItemStyle}>
+                    {/* <span style={configItemStyle}>
                     优先默认位置:
                     {("bottom,left,top,right".split(",") as PopoverPosition[]).sort(sortFixed(pPositions)).map((a, i) => (
                       <span key={a} style={configItemStyle}>
@@ -840,270 +849,271 @@ export function PopupRoot({
                       </span>
                     ))}
                   </span> */}
+                  </div>
+                </section>
+              )}
+
+              {"ColorsPanel" == configTab && (
+                <span>
+                  <label style={configItemStyle}>
+                    <input
+                      type="checkbox"
+                      defaultChecked={isShowSelectedPopupColorsTag}
+                      onInput={(e) => {
+                        setPref("show-selected-popup-colors-tag", e.currentTarget.checked);
+                        setShowSelectedPopupColorsTag(e.currentTarget.checked);
+                      }}
+                    />
+                    {getString("pref-show-selected-popup-colors-tag", {
+                      branch: "label",
+                    })}
+                  </label>
+                  <label style={configItemStyle}>
+                    <input
+                      type="radio"
+                      name="colorsFlexDirection"
+                      defaultChecked={colorsFlexDirection == "column"}
+                      value="column"
+                      onInput={(e) => {
+                        setPref("colors-flex-direction", e.currentTarget.value);
+                        setColorsFlexDirection(e.currentTarget.value);
+                      }}
+                    />
+                    column
+                  </label>
+                  <label style={configItemStyle}>
+                    <input
+                      type="radio"
+                      name="colorsFlexDirection"
+                      defaultChecked={colorsFlexDirection == "row"}
+                      value="row"
+                      onInput={(e) => {
+                        setPref("colors-flex-direction", e.currentTarget.value);
+                        setColorsFlexDirection(e.currentTarget.value);
+                      }}
+                    />
+                    row
+                  </label>
+                  <label style={configItemStyle}>
+                    <input
+                      type="checkbox"
+                      defaultChecked={isShowSelectedPopupMatchTag}
+                      onInput={(e) => {
+                        setPref("show-selected-popup-match-tag", e.currentTarget.checked);
+                        setShowSelectedPopupMatchTag(e.currentTarget.checked);
+                      }}
+                    />
+                    {getString("pref-show-selected-popup-match-tag", {
+                      branch: "label",
+                    })}
+                  </label>
+
+                  <label style={configItemStyle}>
+                    <input
+                      type="radio"
+                      name="matchFlexDirection"
+                      defaultChecked={matchFlexDirection == "column"}
+                      value="column"
+                      onInput={(e) => {
+                        setPref("match-flex-direction", e.currentTarget.value);
+                        setMatchFlexDirection(e.currentTarget.value);
+                      }}
+                    />
+                    column
+                  </label>
+                  <label style={configItemStyle}>
+                    <input
+                      type="radio"
+                      name="matchFlexDirection"
+                      defaultChecked={matchFlexDirection == "row"}
+                      value="row"
+                      onInput={(e) => {
+                        setPref("match-flex-direction", e.currentTarget.value);
+                        setMatchFlexDirection(e.currentTarget.value);
+                      }}
+                    />
+                    row
+                  </label>
+
+                  <br />
+                </span>
+              )}
+              {"TagsStyle" == configTab && (
+                <>
+                  <span style={configItemStyle}>
+                    显示
+                    <input
+                      type="number"
+                      defaultValue={showTagsLength}
+                      min={0}
+                      max={100}
+                      style={inputWidth("lb")}
+                      onInput={(e) => {
+                        setPref("showTagsLength", e.currentTarget.value);
+                        setShowTagsLength(e.currentTarget.valueAsNumber);
+                      }}
+                    />
+                    个。
+                  </span>
+                  <span style={configItemStyle}>
+                    字体大小:
+                    <input
+                      type="number"
+                      min={6}
+                      max={72}
+                      step={0.5}
+                      defaultValue={fontSize}
+                      style={inputWidth("lb")}
+                      onInput={(e) => {
+                        if (e.currentTarget.value) {
+                          setPref("fontSize", e.currentTarget.valueAsNumber);
+                          setFontSize(e.currentTarget.valueAsNumber);
+                        }
+                      }}
+                    />
+                    px。
+                  </span>
+                  <span style={configItemStyle}>
+                    行高:
+                    <input
+                      type="number"
+                      defaultValue={lineHeight}
+                      min={0.1}
+                      max={3}
+                      step={0.1}
+                      style={inputWidth("lb")}
+                      onInput={(e) => {
+                        setPref("lineHeight", e.currentTarget.value);
+                        setLineHeight(e.currentTarget.value);
+                      }}
+                    />{" "}
+                  </span>
+                  <span style={configItemStyle}>
+                    margin:
+                    <input
+                      type="number"
+                      min={-10}
+                      max={200}
+                      step={0.5}
+                      defaultValue={btnMarginTB}
+                      style={inputWidth("lb")}
+                      onInput={(e) => {
+                        if (e.currentTarget.value) {
+                          setPref("btnMarginTB", e.currentTarget.valueAsNumber);
+                          setbtnMarginTB(e.currentTarget.valueAsNumber);
+                        }
+                      }}
+                    />
+                    <input
+                      type="number"
+                      min={-10}
+                      max={200}
+                      step={0.5}
+                      defaultValue={btnMarginLR}
+                      style={inputWidth("lb")}
+                      onInput={(e) => {
+                        if (e.currentTarget.value) {
+                          setPref("btnMarginLR", e.currentTarget.valueAsNumber);
+                          setbtnMarginLR(e.currentTarget.valueAsNumber);
+                        }
+                      }}
+                    />
+                  </span>
+                  <span style={configItemStyle}>
+                    padding:
+                    <input
+                      type="number"
+                      min={-10}
+                      max={200}
+                      step={0.5}
+                      defaultValue={btnPaddingTB}
+                      style={inputWidth("lb")}
+                      onInput={(e) => {
+                        if (e.currentTarget.value) {
+                          setPref("btnPaddingTB", e.currentTarget.valueAsNumber);
+                          setbtnPaddingTB(e.currentTarget.valueAsNumber);
+                        }
+                      }}
+                    />
+                    <input
+                      type="number"
+                      min={-10}
+                      max={200}
+                      step={0.5}
+                      defaultValue={btnPaddingLR}
+                      style={inputWidth("lb")}
+                      onInput={(e) => {
+                        if (e.currentTarget.value) {
+                          setPref("btnPaddingLR", e.currentTarget.valueAsNumber);
+                          setbtnPaddingLR(e.currentTarget.valueAsNumber);
+                        }
+                      }}
+                    />{" "}
+                  </span>
+                  <span style={configItemStyle}>
+                    圆角:
+                    <input
+                      type="number"
+                      min={0}
+                      max={30}
+                      step={0.5}
+                      defaultValue={buttonBorderRadius}
+                      style={inputWidth("lb")}
+                      onInput={handleInputNumber("buttonBorderRadius", setButtonBorderRadius)}
+                    />
+                  </span>
                 </>
-              </div>
-            )}
-
-            {"ColorsPanel" == configTab && (
-              <span>
-                <label style={configItemStyle}>
-                  <input
-                    type="checkbox"
-                    defaultChecked={isShowSelectedPopupColorsTag}
-                    onInput={(e) => {
-                      setPref("show-selected-popup-colors-tag", e.currentTarget.checked);
-                      setShowSelectedPopupColorsTag(e.currentTarget.checked);
-                    }}
-                  />
-                  {getString("pref-show-selected-popup-colors-tag", {
-                    branch: "label",
-                  })}
-                </label>
-                <label style={configItemStyle}>
-                  <input
-                    type="radio"
-                    name="colorsFlexDirection"
-                    defaultChecked={colorsFlexDirection == "column"}
-                    value="column"
-                    onInput={(e) => {
-                      setPref("colors-flex-direction", e.currentTarget.value);
-                      setColorsFlexDirection(e.currentTarget.value);
-                    }}
-                  />
-                  column
-                </label>
-                <label style={configItemStyle}>
-                  <input
-                    type="radio"
-                    name="colorsFlexDirection"
-                    defaultChecked={colorsFlexDirection == "row"}
-                    value="row"
-                    onInput={(e) => {
-                      setPref("colors-flex-direction", e.currentTarget.value);
-                      setColorsFlexDirection(e.currentTarget.value);
-                    }}
-                  />
-                  row
-                </label>
-                <label style={configItemStyle}>
-                  <input
-                    type="checkbox"
-                    defaultChecked={isShowSelectedPopupMatchTag}
-                    onInput={(e) => {
-                      setPref("show-selected-popup-match-tag", e.currentTarget.checked);
-                      setShowSelectedPopupMatchTag(e.currentTarget.checked);
-                    }}
-                  />
-                  {getString("pref-show-selected-popup-match-tag", {
-                    branch: "label",
-                  })}
-                </label>
-
-                <label style={configItemStyle}>
-                  <input
-                    type="radio"
-                    name="matchFlexDirection"
-                    defaultChecked={matchFlexDirection == "column"}
-                    value="column"
-                    onInput={(e) => {
-                      setPref("match-flex-direction", e.currentTarget.value);
-                      setMatchFlexDirection(e.currentTarget.value);
-                    }}
-                  />
-                  column
-                </label>
-                <label style={configItemStyle}>
-                  <input
-                    type="radio"
-                    name="matchFlexDirection"
-                    defaultChecked={matchFlexDirection == "row"}
-                    value="row"
-                    onInput={(e) => {
-                      setPref("match-flex-direction", e.currentTarget.value);
-                      setMatchFlexDirection(e.currentTarget.value);
-                    }}
-                  />
-                  row
-                </label>
-
-                <br />
-              </span>
-            )}
-            {"TagsStyle" == configTab && (
-              <>
-                <span style={configItemStyle}>
-                  显示
-                  <input
-                    type="number"
-                    defaultValue={showTagsLength}
-                    min={0}
-                    max={100}
-                    style={inputWidth("lb")}
-                    onInput={(e) => {
-                      setPref("showTagsLength", e.currentTarget.value);
-                      setShowTagsLength(e.currentTarget.valueAsNumber);
-                    }}
-                  />
-                  个。
-                </span>
-                <span style={configItemStyle}>
-                  字体大小:
-                  <input
-                    type="number"
-                    min={6}
-                    max={72}
-                    step={0.5}
-                    defaultValue={fontSize}
-                    style={inputWidth("lb")}
-                    onInput={(e) => {
-                      if (e.currentTarget.value) {
-                        setPref("fontSize", e.currentTarget.valueAsNumber);
-                        setFontSize(e.currentTarget.valueAsNumber);
-                      }
-                    }}
-                  />
-                  px。
-                </span>
-                <span style={configItemStyle}>
-                  行高:
-                  <input
-                    type="number"
-                    defaultValue={lineHeight}
-                    min={0.1}
-                    max={3}
-                    step={0.1}
-                    style={inputWidth("lb")}
-                    onInput={(e) => {
-                      setPref("lineHeight", e.currentTarget.value);
-                      setLineHeight(e.currentTarget.value);
-                    }}
-                  />{" "}
-                </span>
-                <span style={configItemStyle}>
-                  margin:
-                  <input
-                    type="number"
-                    min={-10}
-                    max={200}
-                    step={0.5}
-                    defaultValue={btnMarginTB}
-                    style={inputWidth("lb")}
-                    onInput={(e) => {
-                      if (e.currentTarget.value) {
-                        setPref("btnMarginTB", e.currentTarget.valueAsNumber);
-                        setbtnMarginTB(e.currentTarget.valueAsNumber);
-                      }
-                    }}
-                  />
-                  <input
-                    type="number"
-                    min={-10}
-                    max={200}
-                    step={0.5}
-                    defaultValue={btnMarginLR}
-                    style={inputWidth("lb")}
-                    onInput={(e) => {
-                      if (e.currentTarget.value) {
-                        setPref("btnMarginLR", e.currentTarget.valueAsNumber);
-                        setbtnMarginLR(e.currentTarget.valueAsNumber);
-                      }
-                    }}
-                  />
-                </span>
-                <span style={configItemStyle}>
-                  padding:
-                  <input
-                    type="number"
-                    min={-10}
-                    max={200}
-                    step={0.5}
-                    defaultValue={btnPaddingTB}
-                    style={inputWidth("lb")}
-                    onInput={(e) => {
-                      if (e.currentTarget.value) {
-                        setPref("btnPaddingTB", e.currentTarget.valueAsNumber);
-                        setbtnPaddingTB(e.currentTarget.valueAsNumber);
-                      }
-                    }}
-                  />
-                  <input
-                    type="number"
-                    min={-10}
-                    max={200}
-                    step={0.5}
-                    defaultValue={btnPaddingLR}
-                    style={inputWidth("lb")}
-                    onInput={(e) => {
-                      if (e.currentTarget.value) {
-                        setPref("btnPaddingLR", e.currentTarget.valueAsNumber);
-                        setbtnPaddingLR(e.currentTarget.valueAsNumber);
-                      }
-                    }}
-                  />{" "}
-                </span>
-                <span style={configItemStyle}>
-                  圆角:
-                  <input
-                    type="number"
-                    min={0}
-                    max={30}
-                    step={0.5}
-                    defaultValue={buttonBorderRadius}
-                    style={inputWidth("lb")}
-                    onInput={handleInputNumber("buttonBorderRadius", setButtonBorderRadius)}
-                  />
-                </span>
-              </>
-            )}
-            {"TagsSetting" == configTab && (
-              <>
-                <div>
-                  排序规则：
-                  {SortTypeArray.map((a) => (
-                    <label key={a}>
-                      <input type="radio" value={a} checked={sortType === a} onChange={handleInput("sortType", setSortType)} />
-                      {getString("popupRoot-SortType-" + a)}
+              )}
+              {"TagsSetting" == configTab && (
+                <>
+                  <div>
+                    排序规则：
+                    {SortTypeArray.map((a) => (
+                      <label key={a}>
+                        <input type="radio" value={a} checked={sortType === a} onChange={handleInput("sortType", setSortType)} />
+                        {getString("popupRoot-SortType-" + a)}
+                      </label>
+                    ))}
+                  </div>
+                  <label style={configItemStyle}>
+                    按住Ctrl同时添加多个Tag
+                    <input
+                      type="checkbox"
+                      defaultChecked={isCtrlAdd}
+                      onInput={(e) => {
+                        setPref("isCtrlAdd", e.currentTarget.checked);
+                        setIsCtrlAdd(e.currentTarget.checked);
+                      }}
+                    />
+                  </label>
+                </>
+              )}
+              {"Development" == configTab && (
+                <>
+                  <div>
+                    相关标签的范围：（未完成）
+                    <label>
+                      <input type="checkbox" value="0" defaultChecked={getPrefAs("TagRangeSelfItem", false)} />
+                      本条目
                     </label>
-                  ))}
-                </div>
-                <label style={configItemStyle}>
-                  按住Ctrl同时添加多个Tag
-                  <input
-                    type="checkbox"
-                    defaultChecked={isCtrlAdd}
-                    onInput={(e) => {
-                      setPref("isCtrlAdd", e.currentTarget.checked);
-                      setIsCtrlAdd(e.currentTarget.checked);
-                    }}
-                  />
-                </label>
-              </>
-            )}
-            {"Development" == configTab && (
-              <>
-                <div>
-                  相关标签的范围：（未完成）
-                  <label>
-                    <input type="checkbox" value="0" defaultChecked={getPrefAs("TagRangeSelfItem", false)} />
-                    本条目
-                  </label>
-                  <label>
-                    <input type="checkbox" value="0" defaultChecked={getPrefAs("TagRangeSelfCollection", false)} />
-                    本条目所在文件夹[]
-                  </label>
-                  <label>
-                    <input type="checkbox" value="0" defaultChecked={getPrefAs("TagRangeSelfCollection", false)} />
-                    本条目所在文件夹以及子文件夹[]
-                  </label>
-                  <label>
-                    <input type="checkbox" value="0" defaultChecked={getPrefAs("TagRangeSelfCollection", false)} />
-                    我的文库所有文件
-                  </label>
-                </div>
-                <div>Nest标签相关：（未完成）</div>
-                <div>Tag排除规则：（未完成）</div>
-              </>
-            )}
+                    <label>
+                      <input type="checkbox" value="0" defaultChecked={getPrefAs("TagRangeSelfCollection", false)} />
+                      本条目所在文件夹[]
+                    </label>
+                    <label>
+                      <input type="checkbox" value="0" defaultChecked={getPrefAs("TagRangeSelfCollection", false)} />
+                      本条目所在文件夹以及子文件夹[]
+                    </label>
+                    <label>
+                      <input type="checkbox" value="0" defaultChecked={getPrefAs("TagRangeSelfCollection", false)} />
+                      我的文库所有文件
+                    </label>
+                  </div>
+                  <div>Nest标签相关：（未完成）</div>
+                  <div>Tag排除规则：（未完成）</div>
+                </>
+              )}
+            </div>
           </div>
         )}
       </>
@@ -1114,6 +1124,7 @@ export function PopupRoot({
     () => (
       <div
         ref={refContentDiv}
+        className="zp-panel"
         style={{
           maxWidth: (windowType == "FollowParent" && !params.ids ? selectionPopupSize.width - 16 : divMaxWidth) + "px",
           maxHeight: divMaxHeight + "px",
@@ -1154,7 +1165,8 @@ export function PopupRoot({
               }}
             >
               {ScaleActionTypeArray.map((a) => (
-                <button key={a}
+                <button
+                  key={a}
                   className="toolbar-button"
                   style={{ width: "unset", margin: " 0 2px", height: "auto" }}
                   onClick={() => {
@@ -1205,7 +1217,8 @@ export function PopupRoot({
                   }}
                 >
                   {ScaleItemActionTypeArray.map((a) => (
-                    <button key={a}
+                    <button
+                      key={a}
                       className="toolbar-button"
                       style={{ width: "unset", margin: " 0 2px", height: "auto" }}
                       onClick={() => {
@@ -1236,7 +1249,8 @@ export function PopupRoot({
               {["量表", "元"]
                 .filter((f) => annotations.some((s) => s.hasTag(f)))
                 .map((action) => (
-                  <button key={action}
+                  <button
+                    key={action}
                     className="toolbar-button"
                     style={{ width: "unset", margin: "2px" }}
                     onClick={() => {
@@ -1283,7 +1297,8 @@ export function PopupRoot({
                         .getAnnotations()
                         .filter((f) => f.hasTag("量表"))
                         .map((a) => (
-                          <button key={a.key}
+                          <button
+                            key={a.key}
                             className="toolbar-button"
                             style={{ width: "unset" }}
                             onClick={() => {
@@ -1313,7 +1328,8 @@ export function PopupRoot({
                         .getAnnotations()
                         .filter((f) => f.hasTag("量表item") && f.annotationComment.includes(`*${sScale}*`))
                         .map((a) => (
-                          <button key={a.key}
+                          <button
+                            key={a.key}
                             className="toolbar-button"
                             style={{ width: "unset" }}
                             onClick={() => {
@@ -1330,7 +1346,8 @@ export function PopupRoot({
                   {
                     //["item", "CR", "CA", "AVE", "factorLoading", "reference", "description"]//.filter(f => f != sScaleAction)
                     ScaleActionTypeArray.map((a) => (
-                      <button key={a}
+                      <button
+                        key={a}
                         className="toolbar-button"
                         style={{ width: "unset", margin: "2px" }}
                         onClick={() => {
@@ -1375,6 +1392,7 @@ export function PopupRoot({
             }}
           >
             <span
+              className="zp-panel__toolbar"
               style={{
                 display: "flex",
                 flexWrap: "wrap",
@@ -1383,6 +1401,7 @@ export function PopupRoot({
             >
               {existTags.length > 0 && (
                 <span
+                  className="zp-panel__chipRow"
                   style={{
                     display: "flex",
                     flexWrap: "wrap",
@@ -1397,7 +1416,7 @@ export function PopupRoot({
                     .map((a) => (
                       <button
                         key={a.key}
-                        className="btn"
+                        className="btn zp-tag-chip"
                         style={{
                           ...tagStyle,
                           whiteSpace: "nowrap",
@@ -1460,7 +1479,13 @@ export function PopupRoot({
                 </>
               )}
 
-              <FixedPopup defaultIsOpen={isShowConfig} openText={getString("popupRoot-setup")} top={'100px'} left={'100px'} width={''} height={''}
+              <FixedPopup
+                defaultIsOpen={isShowConfig}
+                openText={getString("popupRoot-setup")}
+                top={"100px"}
+                left={"100px"}
+                width={""}
+                height={""}
                 onOpenChanged={(isOpen) => {
                   setPref("showConfig", isOpen);
                   setShowConfig(isOpen);
@@ -1469,8 +1494,9 @@ export function PopupRoot({
                   ...tagStyle,
                   background: isShowConfig ? "#00990030" : "#99000030",
                 }}
-
-              >{handleConfigDiv()}</FixedPopup>
+              >
+                {handleConfigDiv()}
+              </FixedPopup>
               {/* {color.rgb}
               <ColorPicker color={color} onChange={setColor} /> */}
               {/* <div>
@@ -1655,20 +1681,20 @@ export function PopupRoot({
                       ctrlAddOrSaveTags(isAdd, cTag);
                       return false;
                     }}
-                  // onMouseDown={(e) => {
-                  //   e.preventDefault();
-                  //   ztoolkit.log("onMouseDown 复制", e)
-                  //   return false
-                  // }}
-                  // onContextMenu={e => {
-                  //   e.preventDefault();
-                  //   ztoolkit.log("onContextMenu 复制", tag.key)
-                  //   new window.Clipboard().readText().then((text) => {
-                  //     ztoolkit.log("onContextMenu 复制", tag.key, text);
-                  //     (e.currentTarget as HTMLInputElement).value = text;
-                  //   })
-                  //   return false
-                  // }}
+                    // onMouseDown={(e) => {
+                    //   e.preventDefault();
+                    //   ztoolkit.log("onMouseDown 复制", e)
+                    //   return false
+                    // }}
+                    // onContextMenu={e => {
+                    //   e.preventDefault();
+                    //   ztoolkit.log("onContextMenu 复制", tag.key)
+                    //   new window.Clipboard().readText().then((text) => {
+                    //     ztoolkit.log("onContextMenu 复制", tag.key, text);
+                    //     (e.currentTarget as HTMLInputElement).value = text;
+                    //   })
+                    //   return false
+                    // }}
                   >
                     <span>[{tag.values.length}]</span>
                     <span>{tag.key}</span>
